@@ -83,11 +83,8 @@ def adviseMe(classifier, semesterData, course_guide):
 if __name__ == "__main__":
 
     Stud_Data = pd.read_excel('./Course_Advisory_Data.xlsx')
-
+    Stud_Data.dropna(inplace= True)
     # Extract Col, Semester, RollNo of Students
-    columns = Stud_Data.columns.to_list()
-    semesters = list(Stud_Data.Semester.unique())
-    roll_nos = list(Stud_Data['Sr. No'].unique())
 
     # Dictionary for Course Code and Course Title and Credit Hours
     course_guide = dict(zip(Stud_Data['Course Title'], Stud_Data['Credit Hours']))
@@ -117,7 +114,9 @@ if __name__ == "__main__":
         Stud_Data.loc[Stud_Data['Grade'] == g, 'Grade Point'] = assignedVal
         assignedVal -= 1
 
-    Stud_Data.dropna(inplace= True)
+    columns = Stud_Data.columns.to_list()
+    semesters = list(Stud_Data.Semester.unique())
+    roll_nos = list(Stud_Data.index.unique())
 
 
 
@@ -144,23 +143,23 @@ if __name__ == "__main__":
         for semester in semesters:
             try:
                 # Convert Each Group To a Separate DataFrame
-                df = pd.DataFrame(Stud_Data.iloc[roll])
+                df = pd.DataFrame(Stud_Data.loc[roll])
                 df = df.groupby(['Semester']).get_group(semester)
 
                 # Transfer Data to a new Dataframe
-                modified_data.iloc[roll].Semester.append([semester])
-                modified_data.iloc[roll].Course.append(list(df['Course Title'].to_list()))
-                modified_data.iloc[roll].Grade_Point.append(list(df['Grade Point'].to_list()))
-                modified_data.iloc[roll].Warning.append(list([df['Warning'].to_list()[0]]))
-                modified_data.iloc[roll].SGPA.append(list([df['SGPA'].to_list()[0]]))
-                modified_data.iloc[roll].CGPA.append(list([df['CGPA'].to_list()[0]]))
+                modified_data.loc[roll].Semester.append([semester])
+                modified_data.loc[roll].Course.append(list(df['Course Title'].to_list()))
+                modified_data.loc[roll].Grade_Point.append(list(df['Grade Point'].to_list()))
+                modified_data.loc[roll].Warning.append(list([df['Warning'].to_list()[0]]))
+                modified_data.loc[roll].SGPA.append(list([df['SGPA'].to_list()[0]]))
+                modified_data.loc[roll].CGPA.append(list([df['CGPA'].to_list()[0]]))
             except KeyError:
                 pass
 
     # Write Data to an excel Stud_Datae
     modified_data.to_pickle('intermediateData.sav')
 
-    data = pd.read_pickle('./New_Data_pickle.xlsx')
+    data = pd.read_pickle('intermediateData.sav')
     cols = data.columns.to_list()
     students = data.index.to_list()
 
@@ -170,16 +169,15 @@ if __name__ == "__main__":
         student_data = data.loc[student]
         for i in range(len(data.loc[student].Semester)-1):
             # print(student_data['Course Title'])
-            xyData = xyData.append({'Taken_Courses':student_data['Course Title'][i],
+            xyData = xyData.append({'Taken_Courses':student_data['Course'][i],
             'Grades':student_data.Grade_Point[i],
             'CGPA': student_data.CGPA[i],
             'SGPA':student_data.SGPA[i],
             'Warning':student_data.Warning[i],
-            'Recommended':student_data['Course Title'][i+1]} ,
+            'Recommended':student_data['Course'][i+1]} ,
             ignore_index=True)
-            if len(student_data['Course Title'][i]) != len(student_data.Grade_Point[i]):
-                print(len(student_data['Course Title'][i]),len(student_data.Grade_Point[i]))
-
+            if len(student_data['Course'][i]) != len(student_data.Grade_Point[i]):
+                print(len(student_data['Course'][i]),len(student_data.Grade_Point[i]))
 
     xyData.to_pickle('xydata.xlsx')
 
